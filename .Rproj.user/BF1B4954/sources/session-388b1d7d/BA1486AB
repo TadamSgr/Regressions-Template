@@ -3,7 +3,7 @@
     "path": "C:/Users/tadam/OneDrive/_Code and Code Projects/Statistics Projects/Regressions Template/Linear Regression Functions.R",
     "project_path": "Linear Regression Functions.R",
     "type": "r_source",
-    "hash": "2909555201",
+    "hash": "1744309768",
     "contents": "",
     "dirty": false,
     "created": 1709170178882.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "90,2",
-        "scrollLine": "81"
+        "cursorPosition": "21,0",
+        "scrollLine": "7"
     },
     "folds": "",
-    "lastKnownWriteTime": 1709244419,
+    "lastKnownWriteTime": 1709245169,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1709244419128,
+    "last_content_update": 1709245169593,
     "read_only": false,
     "read_only_alternatives": []
 }
