@@ -39,6 +39,9 @@ str(dat)
 ```{r}
 source("./Visualize_Plots.R")
 
+
+
+
 plot.dat(dat = dat, y = "listprice", x1 = "livingarea")
 ```
 
