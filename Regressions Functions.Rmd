@@ -1,0 +1,1258 @@
+---
+title: "Data603 Class Exercises"
+author: "Trevor Seeger -- 00503103"
+date: "22/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Multiple Linear Model
+
+```{r}
+# dat = read.csv('condominium.csv')
+
+dat = data.frame("obs" = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                 'listprice' = c(69, 118.5, 116.5, 125, 129.9, 135, 139.9, 147.9, 160, 169.9, 134.9, 155, 169.9, 194.5, 209.9), 
+                 'livingarea' = c(0.56, 0.93, 0.93, 1.02, 1.21, 1.21, 1.21, 1.58, 1.77, 1.67, 1.21, 1.67, 1.58, 1.86, 1.95), 
+                 'floors'	 = c(1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 1, 1, 2, 2, 2), 
+                 'bedrooms'	 = c(2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4), 
+                 'baths' = c(1, 2, 2, 2, 1.7, 2.5, 2, 2.5, 2, 2, 2, 2, 3, 3, 3)
+)
+
+
+```
+
+
+```{r}
+str(dat)
+```
+
+```{r}
+source("C:/Users/tadam/OneDrive - University of Calgary/Marshall Lab/Marshall Lab Code Repository/Linear Regression Functions.R")
+plot.dat(dat = dat, y = "listprice", x1 = "livingarea")
+```
+
+```{r}
+pairs(dat) # Run all pairs in plots 
+```
+
+
+
+
+
+
+```{r}
+#Linear regression with all variables
+# formula2test = formula("listprice ~ livingarea + floors + baths")
+
+formula2test = formula("listprice~livingarea + floors    + bedrooms  + baths")
+LinReg1 <- lm(formula2test, data = dat)
+summary(LinReg1)
+confint(LinReg1)
+
+```
+
+
+## Assumptions in LR
+  1. Linearity (of *E(Y|X)*) that is, the expected value of outcome conditional on variables
+  2. Normality of errors (at each value of *X*) with mean *0*
+  3. Constant variance of errors
+  4. Independence (outcome (between observations) and errors)
+  
+### 1. Linearity
+
+  *  Scatterplots before doing LR (remember the near 0 and local fits?)
+  *  Plots of residuals vs fitted values (or variables)
+    - see below
+
+```{r}
+LinReg.Linearity(model = LinReg1)
+```
+In the Residual vs Fitted plot, we aer looking to see that the values are generally a consistent  distance from the horizontal line. i.e. there is no definitive angle or slope that can be seen. 
+
+
+
+
+
+### 2. Normality of errors (at each value of X) with mean 0
+
+```{r}
+LinReg.NormErrors(model = LinReg1)
+```
+
+
+
+Normality test
+```{r}
+shap = LinReg.NormErrors.Shapiro()
+```
+
+
+`r LinReg.NormErrors.Shapiro()`
+
+The above only works for n<5000 
+If the sample size is large, statistical hypotheses tests have a large power (1 - probability of II type error), and hence any small difference between your distribution and the null distribution (Normal distribution) is meaningful and leads to the rejection of the null hypothesis.
+
+
+
+
+### 3. Constant variance
+```{r}
+bp = LinReg.Variance()
+```
+
+
+If BP is greater than 0.05, the variance of the error term is constant. (Homoskedasticity). If the
+error terms do not have constant variance, they are said to be heteroskedastic. [Tidbit from
+Wikipedia: The term means “differing variance” and comes from the Greek “hetero” ('different')
+and “skedasis” ('dispersion').]
+
+
+### 4. Independence
+
+    Could check for auto correlation (based on another variable or time)
+    This one is one of the hardest to check for
+    Need to start with a good sampling/design to get independent outcomes.
+
+
+```{r}
+LinReg.Indep()
+```
+
+
+
+#### A. Multicollinearity
+
+    Variance inflation factor (VIF)
+    If VIF >5 flag
+```{r}
+LinReg.Indep.Multico(model = LinReg1)
+```
+
+
+*Note*, the above will only remove one at a time, if you intend to remove more than one variable for multicollinearity, you should remove multiples manually. 
+
+
+
+#### B. Influential points
+
+    Cook’s distance (Di)
+    If Di > 1 (or If Di > 0.5) flag
+
+```{r}
+
+LinReg.Indep.InflPts(model = LinReg1, dat = dat, y = "listprice" )
+```
+
+If the results of the two models are similar, we can keep the data points, otherwise, we will need to run a new model with those data deleted. 
+
+
+
+
+
+## in class problem 2
+```{r}
+reduced = lm(listprice ~ livingarea + floors + baths, data = dat) # dropped bedrooms
+
+anova(LinReg1, reduced)
+```
+
+```{r}
+summary(reduced)
+```
+
+```{r}
+summary(lmdat)$adj.r.squared
+summary(reduced)$adj.r.squared
+summary(lm(listprice ~ livingarea + baths, data = dat))$adj.r.squared
+
+```
+
+```{r}
+sigma(lmdat) # RMSE for the full model
+sigma(reduced) # Rmse for the reduced mode
+sigma(lm(listprice ~ livingarea + baths, data = dat))
+```
+
+```{r}
+lmred.int = lm(listprice ~ livingarea + floors + baths + livingarea*floors + livingarea*baths + floors*baths, data = dat)
+# can also use (livingarea + floors + baths)^2 to get all of the interactions 
+#If you just put the interactions in it forces the variables in  as well
+summary(lmred.int)
+```
+
+
+```{r}
+anova(reduced, lmred.int)
+```
+Not significant, thereforew we can remove the interactions from the model
+
+
+## 
+Data on last year’s sale (Y in 100,000s dollars) in 40 sales districts are given in the sales.csv file. This file also contains 
+promotional expenditures (X1: in 1,000s dollars),
+the number of active accounts (X2),
+the number of competing brands (X3), 
+andthe district potential (X4,coded) for each of the district
+Find the best fitted model (interaction term might be included) to predict sales. Which model would you choose? Explain
+
+```{r}
+dat = read.csv('sales.csv')
+modelfull = lm(Y~X1+X2+X3+X4, data = dat)
+(modelfull.summ = summary(datmodel))
+```
+
+```{r}
+model.dropx4 = modelfull = lm(Y~X1+X2+X3, data = dat)
+(model.dropx4.summ = summary(model.dropx4))
+
+(anova(model.dropx4, modelfull))
+
+```
+
+```{r}
+model.dropx4x1 = lm(Y~X2+X3, data = dat)
+(model.dropx4x1.summ = summary(model.dropx4))
+
+(anova(model.dropx4x1, model.dropx4))
+
+```
+
+```{r}
+model.intxn = lm(Y~X2+X3+X2*X3, data = dat)
+(model.intxn.summ = summary(model.intxn))
+
+(anova(model.dropx4, modelfull))
+
+```
+
+```{r}
+anova(model.intxn, model.dropx4x1)
+```
+
+## 
+
+```{r}
+dat = read.csv('Credit.csv')
+
+model.full = lm(Balance ~ Income + Limit + Rating + Cards + Age + Education + factor(Gender) + 
+                             factor(Student) + factor(Married) + factor(Ethnicity), data  = dat)
+
+summary(model.full)
+```
+
+```{r}
+model.short = lm(Balance ~ Income + Limit + Rating + Cards + Age + 
+                             factor(Student), data  = dat)
+
+summary(model.short)
+anova(model.short, model.full)
+```
+
+```{r}
+model.short.inter = lm(Balance ~ (Income + Limit + Rating + Cards + Age + 
+                             factor(Student))^2, data  = dat)
+
+summary(model.short.inter)
+```
+
+```{r}
+model.short.inter.trim = lm(Balance ~ Income + Limit + Rating + Cards + Age + 
+                             factor(Student) + Income*Rating + Income*Age + Income*factor(Student) + Limit*Rating + 
+                              Limit*factor(Student), data  = dat)
+
+summary(model.short.inter.trim)
+```
+
+
+```{r}
+model.short.inter.trim = lm(Balance ~ Income + Limit + Rating + Cards + Age + 
+                             factor(Student) + Income*Rating + Income*factor(Student) + Limit*Rating + 
+                              Limit*factor(Student), data  = dat)
+
+summary(model.short.inter.trim)
+```
+
+```{r}
+anova(model.short, model.short.inter.trim)
+```
+
+
+
+## proqual
+```{r}
+dat = read.csv('PRODQUAL.csv')
+require(ggplot2)
+ggplot(data = dat, aes(x = PRESSURE, y = QUALITY)) + 
+  geom_point() + 
+  geom_smooth()
+model = lm(QUALITY ~ PRESSURE, data = dat)
+summary(model)
+
+
+model = lm(QUALITY ~ PRESSURE + I(PRESSURE^2), data = dat)
+summary(model)
+
+
+
+model = lm(QUALITY ~ PRESSURE + I(PRESSURE^2)+ I(PRESSURE^3), data = dat)
+summary(model)
+
+
+
+model = lm(QUALITY ~ PRESSURE + I(PRESSURE^2)+ I(PRESSURE^3)+ I(PRESSURE^4), data = dat)
+summary(model)
+
+
+
+model = lm(QUALITY ~ PRESSURE +I(PRESSURE^2)+ I(PRESSURE^3)+ I(PRESSURE^4)+ I(PRESSURE^5), data = dat)
+summary(model)
+
+
+```
+
+```{r}
+# install.packages('olsrr')
+library(olsrr)
+
+dat = read.csv('Credit.csv')
+
+model.full = lm(Balance ~ Income + Limit + Rating + Cards + Age + Education + factor(Gender) + 
+                             factor(Student) + factor(Married) + factor(Ethnicity), data  = dat)
+
+ols_step_both_p(model.full, pent = 0.1, prem = 0.3, details = TRUE)
+```
+
+### Backward selection
+
+```{r}
+library(olsrr) #need to install the package olsrr
+dat=read.csv("CREDIT.csv", header = TRUE)
+
+fullmodel<-lm(Balance ~ number + Income + Limit + Rating + Cards + 
+                Age + Education + factor(Gender) + factor(Student) + factor(Married) + Ethnicity, 
+              data = dat)
+backmodel=ols_step_backward_p(fullmodel, prem = 0.3, details=TRUE)
+```
+
+### Forward Selection 
+
+```{r}
+library(olsrr) #need to install the package olsrr
+
+fullmodel<-lm(Balance ~ number + Income + Limit + Rating + Cards + 
+                Age + Education + factor(Gender) + factor(Student) + factor(Married) + Ethnicity, 
+              data = dat)
+
+formodel=ols_step_forward_p(fullmodel,penter = 0.1, details=TRUE)
+```
+
+## All-Possible-Regressions Selection Procedure
+### Option 1
+```{r}
+#Option 1
+library(olsrr)
+# require(ggplot2)
+require(seqHMM)
+firstordermodel<-lm(Balance ~ number + Income + Limit + Rating + Cards + 
+                Age + Education + factor(Gender) + factor(Student) + factor(Married) + Ethnicity, 
+              data = dat) #Select the subset of predictors that do the best at meeting some well-defined objective criterion, such as having the largestR2 value or the smallest MSE, Mallow's Cp or AIC.
+ks=ols_step_best_subset(firstordermodel, details=TRUE)
+
+par(mfrow=c(2,2)) # split the plotting panel into a 2 x 2 grid
+plot(ks$cp,type = "o",pch=10, xlab="Number of Variables",ylab="Cp")
+plot(ks$rsq,type = "o",pch=10, xlab="Number of Variables",ylab="R^2")
+#plot(ks$rss, xlab="Number of Variables",ylab= "RMSE")
+plot(ks$aic,type = "o",pch=10, xlab="Number of Variables",ylab="AIC")
+plot(ks$adjr,type = "o",pch=10, xlab="Number of Variables",ylab= "Adjusted R^2")
+```
+
+### Option 2
+
+```{r}
+# Option 2
+#install.packages("leaps")
+library(leaps) #need to install the package leaps for best.subset() function
+#by default, regsubsets() only report results up to the best 8-variablemodel 
+best.subset<-regsubsets(Balance ~ number + Income + Limit + Rating + Cards + 
+                Age + Education + factor(Gender) + factor(Student) + factor(Married) + Ethnicity, 
+              data = dat, nv=8 ) #by default, regsubsets() only reports results up to the best 8-variable model
+#Model selection by exhaustive search, forward or backward stepwise, or sequential replacement#The summary() command outputs the best set of variables for each model size using RMSE.
+summary(best.subset) # pick which variables in the best model. 
+
+reg.summary<-summary(best.subset)# for the output interpretation
+rsquare<-c(reg.summary$rsq)
+cp<-c(reg.summary$cp)
+AdjustedR<-c(reg.summary$adjr2)
+RMSE<-c(reg.summary$rss)
+cbind(rsquare,cp,RMSE,AdjustedR)
+
+
+par(mfrow=c(2,2)) # split the plotting panel into a 2 x 2 grid
+plot(reg.summary$cp,type = "o",pch=10, xlab="Number of Variables",ylab= "Cp")
+plot(reg.summary$rsq,type = "o",pch=10, xlab="Number of Variables",ylab= "R^2")
+plot(reg.summary$rss,type = "o",pch=10, xlab="Number of Variables",ylab= "RMSE")
+plot(reg.summary$adjr2,type = "o",pch=10, xlab="Number of Variables",ylab= "Adjusted R^2")
+```
+
+## Multiple regression part 3, Nov 5
+### model selection
+
+
+```{r}
+#considering high order model between Xs and Y to improve the model
+# install.packages("GGally")
+library(GGally) # need to install the GGally package for ggpairs function
+## Loading required package: ggplot2#option 1: using function ggpairs()
+dat.trim = data.frame(
+  'balance' = dat$Balance, 
+  'income' = dat$Income,
+  'rating' = dat$Rating, 
+  'student' = dat$Student, 
+  'limit' = dat$Limit, 
+  'cards' = dat$Cards,
+  'age' = dat$Age
+  
+)
+#ggpairs(salarydata)
+#LOESS or LOWESS: LOcally WEighted Scatter-plot Smoother
+ggpairs(dat.trim,lower = list(continuous = "smooth_loess", combo ="facethist", discrete = "facetbar", na = "na"))
+```
+
+
+
+```{r}
+#option2: using function pairs()
+pairs(~balance + income + rating + factor(student) + limit + cards + age,data=dat.trim,panel = panel.smooth)
+
+
+```
+
+
+The data are provided in CLERICAL.csv file count for theseactivities on each of 52 working days. Conduct a StepwiseRegression Procedure and All-Possible-Regressionsprocedure of the data using R software package
+
+For example, in a large metropolitan department store, thenumber of hours worked (Y) per day by the clerical staff maydepend on the followingvariables:
+X1 = Number of pieces of mail processed (open, sort, etc.)
+X2 = Number of money orders and gift certificates sold,
+X3 = Number of window payments (customer chargeaccounts) transacted ,
+X4 = Number of change order transactions processed ,
+X5 = Number of checks cashed ,
+X6 =Number of pieces of miscellaneous mail processed on an‘’as available’’ basis , and
+X7 =Number of bus tickets sold
+```{r}
+dat = read.csv('CLERICAL.csv')
+
+# install.packages('olsrr')
+library(olsrr)
+
+dat = read.csv('Credit.csv')
+
+model.full = lm(Y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7
+                , data  = dat)
+
+(bestmodel = ols_step_both_p(model.full, pent = 0.1, prem = 0.3, details = TRUE)) #stepwise regression
+```
+
+```{r}
+#Option 1
+library(olsrr)
+# require(ggplot2)
+require(seqHMM)
+# firstordermodel<-lm(Balance ~ number + Income + Limit + Rating + Cards + 
+#                 Age + Education + factor(Gender) + factor(Student) + factor(Married) + Ethnicity, 
+#               data = dat) #Select the subset of predictors that do the best at meeting some well-defined objective criterion, such as having the largestR2 value or the smallest MSE, Mallow's Cp or AIC.
+ks=ols_step_best_subset(model.full, details=TRUE)
+
+par(mfrow=c(2,2)) # split the plotting panel into a 2 x 2 grid
+plot(ks$cp,type = "o",pch=10, xlab="Number of Variables",ylab="Cp")
+plot(ks$rsq,type = "o",pch=10, xlab="Number of Variables",ylab="R^2")
+#plot(ks$rss, xlab="Number of Variables",ylab= "RMSE")
+plot(ks$aic,type = "o",pch=10, xlab="Number of Variables",ylab="AIC")
+plot(ks$adjr,type = "o",pch=10, xlab="Number of Variables",ylab= "Adjusted R^2")
+```
+
+# linear regression part 4
+## regression diagnostics
+### linearity assumption
+
+```{r}
+dat = read.csv("CLERICAL.csv")
+#logmodel<-lm(sale~log(tv)+radio+tv*radio, data=Advertising)
+
+model<-lm(Y~~X2 + X4 + X5, data=dat)
+summary(model)
+
+morepower<-lm(Y~X2 + I(X2^2) + X4 + X5, data = dat)
+
+
+
+```
+
+## Test homoscedasticity
+
+```{r}
+#residuals plot
+ggplot(cubic, aes(x=.fitted, y=.resid)) +  
+  geom_point() +  
+  geom_hline(yintercept = 0) +  
+  geom_smooth() +  
+  ggtitle("Residual plot: Residual vs Fitted values")
+
+
+#a scale location plot
+ggplot(cubic, aes(x=.fitted, y=sqrt(abs(.stdresid)))) +  
+  geom_point() +  
+  geom_hline(yintercept = 0) +  
+  geom_smooth()+   
+  ggtitle("Scale-Location plot : Standardized Residual vs Fitted values")
+
+
+#optional graphs for residual plots and a scale location plot
+plot(cubic, which=1) #residuals plot
+plot(cubic, which=3) #a scale location plot
+```
+
+```{r}
+# A more formal, mathematical way of detecting heteroscedasticity is what isknown as the Breusch-Pagan test. It involves using a variance function andusing a  to test
+library(lmtest)
+cubic<-lm(Y~X2 + I(X2^2) + I(X2^3), data=dat)
+bptest(cubic) #the Breush-pagan test for homoscedasticity
+
+
+```
+
+## Normality assumption 
+```{r}
+library(ggplot2)
+
+
+
+#option 1 (histogram)
+qplot(residuals(morepower),
+      geom="histogram",
+      # binwidth = 0.1,
+      main = "Histogram of residuals",
+      xlab = "residuals", color="red",
+      fill=I("blue"))
+
+#option 2 (histogram)
+ggplot(data=dat, aes(residuals(morepower))) +
+  geom_histogram(col="red", fill="blue")+#, breaks = seq(-1,1,by=0.1)) +
+  labs(title="Histogram for residuals") +
+  labs(x="residuals", y="Count")
+
+#normal QQ plot
+ggplot(data = dat, aes(sample=morepower$residuals)) +
+  stat_qq() +
+  stat_qq_line()
+
+#optional histogram
+par(mfrow=c(1,2))
+hist(residuals(morepower))
+plot(morepower, which=2) #a Normal plot
+
+#Testing for Normality
+shapiro.test(residuals(morepower)) #p>0.05 will be normal
+```
+
+```{r}
+#Calculate VIF for multicollinearity model
+dat = read.csv("CREDIT.csv")
+firstordermodel = lm(Balance ~ Income + Age + Cards + factor(Student) + Limit, data = dat)
+
+#option 1 
+# X<-cbind(workhours$X2,workhours$X4,workhours$X5)
+# imcdiag(X,workhours$Y, method="VIF")
+
+## OR 
+
+#option 2
+library(car)
+vif(firstordermodel)
+#vif(improvemodel)
+
+library(mctest) #for VIF
+# workhours=read.csv("~/OneDrive - University of Calgary/MyCoursesThierry/DATA603/data/dataset603/CLERICAL.csv",
+#                    header = TRUE) 
+# #improvemodel<-lm(Y~X2+I(X2^2)+X4+X5,data=workhours)
+# firstordermodel<-lm(Y~X2+X4+X5,data=workhours)
+newfirstordermodel = lm(Balance ~ Income + Age + Cards + factor(Student), data = dat)
+pairs(~Balance + Income + Age + Cards + factor(Student),data=dat)
+vif(newfirstordermodel)
+```
+
+
+
+## Week 4 
+From the clerical staff work hours, using residual plots to conduct a residualanalysis of the data. Check any potential outliers.
+```{r}
+dat = read.csv("CLERICAL.csv")
+#logmodel<-lm(sale~log(tv)+radio+tv*radio, data=Advertising)
+
+model<-lm(Y~X2 + X4 + X5, data=dat)
+summary(model)
+
+morepower<-lm(Y~X2 + I(X2^2) + X4 + X5, data = dat)
+
+
+# Residual vs leverage plot
+plot(morepower,which=5)
+
+# Cook's distance
+dat[cooks.distance(morepower)>0.5,] #have Cook statistics larger than 0.5
+plot(morepower,pch=18,col="red",which=c(4))
+
+
+
+# Leverage points
+lev=hatvalues(morepower)
+p = length(coef(morepower))
+n = nrow(dat)
+outlier = lev[lev>(2*p/n)] # can also use (3p/n) at tester's discretion
+print(outlier)
+
+
+plot(rownames(dat),lev, 
+     main = "Leverage in Advertising Dataset", 
+     xlab="observation",
+     ylab = "Leverage Value")
+abline(h = 2 *p/n, lty = 1)
+abline(h = 3 *p/n, lty = 1)
+```
+
+Check assumptions for the model to predict executive salary (Y)
+```{r}
+morepower<-lm(Y~ X1 + I(X1^2) +X2 + X3 + X4 + X5 + X3*X4, data = dat)
+#residuals plot
+ggplot(morepower, aes(x=.fitted, y=.resid)) +  
+  geom_point() +  
+  geom_hline(yintercept = 0) +  
+  geom_smooth() +  
+  ggtitle("Residual plot: Residual vs Fitted values")
+
+
+#a scale location plot
+ggplot(morepower, aes(x=.fitted, y=sqrt(abs(.stdresid)))) +  
+  geom_point() +  
+  geom_hline(yintercept = 0) +  
+  geom_smooth()+   
+  ggtitle("Scale-Location plot : Standardized Residual vs Fitted values")
+
+#Homoscedasticity
+# A more formal, mathematical way of detecting heteroscedasticity is what isknown as the Breusch-Pagan test. It involves using a variance function andusing a  to test
+library(lmtest)
+bptest(morepower) #the Breush-pagan test for homoscedasticity
+
+
+
+library(ggplot2)
+#option 1 (histogram)
+qplot(residuals(morepower),
+      geom="histogram",
+      # binwidth = 0.1,
+      main = "Histogram of residuals",
+      xlab = "residuals", color="red",
+      fill=I("blue"))
+
+#option 2 (histogram)
+ggplot(data=dat, aes(residuals(morepower))) +
+  geom_histogram(col="red", fill="blue")+#, breaks = seq(-1,1,by=0.1)) +
+  labs(title="Histogram for residuals") +
+  labs(x="residuals", y="Count")
+
+#normal QQ plot
+ggplot(data = dat, aes(sample=morepower$residuals)) +
+  stat_qq() +
+  stat_qq_line()
+
+#optional histogram
+par(mfrow=c(1,2))
+hist(residuals(morepower))
+plot(morepower, which=2) #a Normal plot
+
+#Testing for Normality
+shapiro.test(residuals(morepower)) #p>0.05 will be normal
+
+
+```
+
+
+
+
+# logistic regression
+```{r}
+library("readxl")
+dat <- read_excel("desire.xlsx")
+
+library(ggplot2)
+ggplot(data = dat, 
+       mapping = aes(x = age, y = desire)) +  
+  geom_point()
+```
+
+Using linear regression model
+```{r}
+
+ggplot(data = dat, mapping = aes(x = age, y = desire))+
+  geom_point()+
+  geom_smooth(method=lm,se=F)
+```
+
+logistic regression line
+```{r}
+ggplot(data = dat, mapping = aes(x = age, y = desire))+
+  geom_point()+ 
+  stat_smooth(method="glm",method.args=list(family="binomial"),se=FALSE)
+```
+
+```{r}
+library(ISLR) # for Default data Set
+summary(Default)
+mylogit <- glm(default ~ balance, data = Default, family = "binomial") #binomial tells you that DV is dichotomous
+coefficients(mylogit)
+confint(mylogit)
+
+
+mylogit <- glm(default ~ balance, data = Default, family = "binomial")
+sum.coef<-summary(mylogit)$coef
+est<-exp(sum.coef[,1])
+print(est)
+```
+
+Example: The desire data, showing the distribution of 24 currently married andfecund women interviewed in the Fiji Fertility Survey, according to age,education, desire for more children. the data are provided in desire.xlsx fileX1= age (year)X2= education (0=none, 1=some),Y= desire for more children (0=no more, 1=more),
+
+Fit the Logistic Regression Model to predict the probability of desire for more children using age.βi
+```{r}
+library(ISLR) # for Default data Set
+library(aod) # for Wald test
+
+# mylogit <- glm(default ~ balance, data = Default, family = "binomial")# The Wald Z test
+# summary(mylogit)
+#The Wald chi square test for full or reduced model
+wald.test(b = coef(mylogit), Sigma = vcov(mylogit), Terms = 2)  #Terms tells R which terms in the model are to be tested\
+newdata = data.frame(balance=1000)
+predict(mylogit, newdata, type="response")
+
+```
+```{r}
+
+model.logit = glm(desire ~ age, data = dat, family = "binomial")
+summary(model.logit)
+```
+
+
+for every year increase, you have in age the log odds descrease of -0.3493
+
+
+Construct a 95% confidence interval for the logit model.
+
+```{r}
+exp(confint(model.logit))
+```
+
+From the default data,
+a. write both the logistic regression model of Default on Income and the logit transformation of this logistic regression model.
+```{r}
+library(ISLR) # for Default data Set
+
+model.logit = glm(default ~ income, data = Default, family = "binomial")
+summary(model.logit)
+```
+
+```{r}
+exp(coefficients(model.logit))
+```
+
+
+
+b. Interpret the logistic regression coefficient  in logistic model Y eβ1^
+give the odds, not just the log odds
+
+
+c. Test if The probability of default depends on Income at alpha  = 0.05
+When that's the only thing in the model, yes. 
+
+
+d. Find a 95% Confidence Interval for the logistic regression coefficient e^beta_i
+```{r}
+exp(confint(model.logit))
+# confint(exp(model.logit)) # does not run because it's wrong 
+```
+
+e. Use the method of Model Fit in Logistic Regression Model to evaluate the performance of a logistic regression model
+
+
+f. Predict the probability of default when Income= 60,000 dollars. Would you consider a person with $60,000 income defaults on payment?
+```{r}
+newdata = data.frame(income=60000)
+predict(model.logit, newdata, type="response")
+```
+
+
+
+
+next question 
+
+```{r}
+library(ggplot2)
+dat=read.csv("DISCRIM.csv", header = TRUE)
+mylogit <- glm(HIRE ~EXP, data = dat, family = "binomial")#option1 using ggplot function
+ggplot(dat, aes(x=EXP, y=HIRE)) + 
+  geom_point() +   
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+
+#option2 using plot (base graphic)
+plot(dat$EXP, dat$HIRE) 
+curve(predict(mylogit, data.frame(EXP=x), type="response"), add=TRUE)
+```
+
+```{r}
+model.logit <- glm(factor(HIRE) ~factor(GENDER), data = dat, family = "binomial")
+summary(model.logit)
+
+
+```
+
+
+# Logistit regression part 2
+categorical variables
+```{r}
+library(ISLR) # for Default data Set
+mylogit <- glm(default ~ balance+income, data = Default, family = "binomial")
+sum.coef<-summary(mylogit)$coef
+
+est<-exp(sum.coef[,1])
+print(est)
+
+
+
+# Option 1 to fit logitic using a contingency table
+model1<-glm(yes/(yes+no)~gender+race,weights=yes+no,family = "binomial",data=marijuana)
+
+summary(model1)  # for Wald Z test
+
+
+
+# Option 2 to fit logitic using a contingency table
+model2<-glm(as.matrix(marijuana[,3:4])~gender+race,family = "binomial",data=marijuana)# The matrix response sould not be a data frame in R
+summary(model2)  # for Wald Z test
+
+
+
+library(aod) # for Wald test
+library(ISLR) # for Default data Set
+mylogit <- glm(default ~ balance+income, data = Default, family = "binomial")#The Wald chi square test for the full model 
+wald.test(b = coef(mylogit), Sigma = vcov(mylogit), Terms = 2:3)  #Terms tells R which terms in the model are to be tested.
+#p-value for the overall test using the likelihood-ratio test
+with(mylogit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
+
+
+```
+
+
+
+## likelihood ratio test
+```{r}
+library(ISLR) # for Default data Set
+simplelogit <- glm(default ~ balance, data = Default, family = "binomial")
+multiplelogit <- glm(default ~ balance+income, data = Default, family = "binomial")
+anova(simplelogit,multiplelogit,test="Chisq")
+
+
+library(lmtest)# for lrtest() function 
+#Another option to perform the Likelihood Ratio Test
+lrtest(simplelogit,multiplelogit)
+
+
+```
+
+
+
+## Model fit in multiple logistic regression
+
+```{r}
+library(ISLR) # for Default data Set
+library(ROCR) # for ROC 
+library(pROC) # for AUC
+mymullogit <- glm(default ~ balance+income, data = Default, family = "binomial")
+summary(mymullogit)
+
+mylogit <- glm(default ~ balance, data = Default, family = "binomial")
+summary(mylogit)
+
+# ROC&AUC for default = balance
+#--------ROC Curve-----------
+prob1=predict(mylogit,type=c("response")) #this one comes from the ROC package
+# Option 1
+pred<-prediction(prob1,Default$default)
+perf<-performance(pred,measure = "tpr",x.measure="fpr")
+plot(perf,col=2,main="ROC CURVE ", xlab="False Positive Rate (1-Specificity)",ylab="TruePositive Rate(Sensitiity)")
+abline(0,1)
+
+
+#  Option 2
+roc1<-roc(Default$default,prob1) #from pROC package
+plot(roc1) #also provides the ROC curve
+
+
+
+
+
+#-------AUC------------------
+auc(roc1)
+
+
+# ROC&AUC for default = balance+income
+#--------ROC Curve-----------
+prob2=predict(mymullogit,type=c("response"))
+pred<-prediction(prob2,Default$default)
+perf<-performance(pred,measure = "tpr",x.measure="fpr")
+plot(perf,col=2,main="ROC CURVE ", xlab="False Positive Rate (1-Specificity)",ylab="TruePositive Rate (Sensitiity)")
+abline(0,1)
+
+  
+```
+
+### In class problem 
+Consider the problem of collusive bidding among road construction contractors.Contractors sometimes scheme to set bid prices higher than the fair market (orcompetitive) price. Suppose an investigator has obtained information on the bid status(1 if fixed bid or 0 if competitive bid) for a sample of 31 contracts. In addition, two
+variables thought to be related to bid status are also recorded for each contract:number of bidders x1 and the difference between the winning (lowest) bid and theestimated competitive bid (called the engineer’s estimate) x2, measured as apercentage of the estimate. The data are provided in ROADBIDS.csv file
+
+```{r}
+dat = read.delim("ROADBIDS.txt")
+## a ------------
+mylogit = glm(glm(STATUS ~ NUMBIDS + DOTEST, data = dat, family = "binomial"))
+summary(mylogit)
+```
+
+
+
+a: Wald test
+See above
+
+b: From the result in a) find the Wald  statistic for the full logistic regression modelwith the p-value?
+
+```{r}
+wald.test(b = coef(mylogit), Sigma = vcov(mylogit), Terms = 2:3)  #Terms tells R which terms in the model are to be tested.
+```
+
+C: likelihood ratio with reduced model with just numbids
+```{r}
+mylogit.red = glm(STATUS ~ NUMBIDS, data = dat, family = "binomial")
+anova(mylogit.red,mylogit,test="Chisq")
+
+```
+
+D: write logistic regression models and logit transformations for both models. 
+
+E: Compare model fits 
+```{r}
+#--------ROC Curve-----------
+prob1=predict(mylogit,type=c("response")) #this one comes from the ROC package
+# Option 1
+pred<-prediction(prob1,dat$STATUS)
+perf<-performance(pred,measure = "tpr",x.measure="fpr")
+plot(perf,col=2,main="ROC CURVE ", xlab="False Positive Rate (1-Specificity)",ylab="TruePositive Rate(Sensitiity)")
+abline(0,1)
+
+
+
+# ROC&AUC for default = balance+income
+#--------ROC Curve-----------
+prob2=predict(mylogit.red,type=c("response"))
+pred<-prediction(prob2,dat$STATUS)
+perf<-performance(pred,measure = "tpr",x.measure="fpr")
+plot(perf,col=2,main="ROC CURVE ", xlab="False Positive Rate (1-Specificity)",ylab="TruePositive Rate (Sensitiity)")
+abline(0,1)
+
+```
+
+
+F: Predict probability of status when there are 4 bidders and difference between winning (lowest) bit and estimated competitive bid (engineers est) was 27.3% higher
+
+
+
+
+
+
+
+### In class problem. 
+
+Suppose you are investigating allegations of experience, level of education and genderin the hiring practices of a particular firm. Data were collected on 60 former applicantsto be used to fit the logit model whereY= 1 if hired, 0 if notX1= Years of educationX2= Years of experienceNANANA
+X3=1 if male applicant, 0 if female applicantFrom the DISCRIM.csv data
+
+
+
+```{r}
+dat = read.csv("DISCRIM.csv")
+## a ------------
+mylogit = glm(glm(HIRE ~ EDUC + EXP + GENDER, data = dat, family = "binomial"))
+summary(mylogit)
+```
+
+a: Test if The probability of hiring depends on education, experience, and/or gender at alpha = 0.5
+Should we drop Education predictor?
+
+b: Use the log likelihood ratio test to check if Education predictor should be addedinto the model.
+```{r}
+mylogit.red = glm(HIRE ~ EXP + GENDER, data = dat, family = "binomial")
+anova(mylogit.red,mylogit,test="Chisq")
+```
+
+
+c: Use the model fit methods (AIC, ROC curve with AUC) to confirm that addingEducation into the model will improve the model performance
+
+```{r}
+
+```
+
+d: write both the logistic regression model of HIRE on and the logit transformation ofthis logistic regression model.
+
+e: Interpret the logistic regression coefficient c^beta1 in logistic model
+
+f: Predict the probability of hiring when a man who has worked for 6 years, has 4years of education. Would he be hired for this firm
+
+
+## Interactions Logistic Regressions
+```{r}
+library(lmtest)
+# mylogit <- glm(default ~ balance+income, data = Default, family = "binomial")summary(mylogit)#Wald z tes
+# 
+# 
+# 
+# interlogit <- glm(default ~ balance+income+balance*income, data = Default, family = "binomial")
+# summary(interlogit)
+# anova(mylogit,interlogit,test="Chisq")
+
+```
+
+problems
+
+```{r}
+logit.int = glm(HIRE ~ EDUC +  EXP + GENDER + 
+                EDUC * EXP + EDUC * GENDER + EXP * GENDER, 
+                data = dat, family = "binomial")
+
+summary(logit.int)
+```
+
+
+
+# Experimental design
+## ANOVA
+
+```{r}
+#bloodpressure=read.csv("C:\\Users\\thuntida.ngamkham\\Desktop\\dataset603\\bloodpressure.csv", header=TRUE)
+bloodpressure=read.csv("bloodpressure.csv")
+str(bloodpressure) #Read your data set and double check that dependent and independent variables are correctly read by R
+
+
+CRD<-aov(bloodpressure~treatment, data=bloodpressure) #Perform ANOVA for CRDsummary(CRD)
+
+boxplot(bloodpressure~treatment, data=bloodpressure, main="Boxplot diagram for the different Levels") #a visual comparison of the data obtained at the different levels
+
+
+
+## t.test ------
+
+t.test(bloodpressure~treatment, data = bloodpressure,var.equal = T)
+
+
+## ANOVA with more than two levels
+MVPC=read.csv("MVPC.csv", header=TRUE)
+str(MVPC)#Read your data set and double check that dependent and indepent variables are correctly read by R
+
+CRD<-aov(Score~Treatment, data=MVPC) #Perform ANOVA for CRDboxplot(Score~Treatment, data=MVPC, main="Boxplot diagram for the different Levels") #a visual comparison of the data obtained at the different levels
+
+summary(CRD)
+
+```
+
+
+### inclass
+
+```{r}
+dat = read.csv("lifetime.csv")
+
+CRD<-aov(hrs~device, data=dat) #Perform ANOVA for CRDboxplot(Score~Treatment, data=MVPC, main="Boxplot diagram for the different Levels") #a visual comparison of the data obtained at the different levels
+
+summary(CRD)
+```
+
+## estimation of model paramters
+
+```{r}
+ybar<-mean(dat$hrs[dat$device == "device6"])
+tcrit<-qt(0.025,CRD$df.residual, lower.tail = F)
+MSE<-sum((CRD$residuals)^2/CRD$df.residual)  #CRD$df.residual=24-8=16
+r<-length(dat$hrs[dat$device == "device6"])#construct a 95% CI
+LowerCI<-ybar-tcrit*sqrt(MSE/r)
+UpperCI<-ybar+tcrit*sqrt(MSE/r)
+CI<-cbind(LowerCI,UpperCI)
+print(CI)
+
+```
+
+
+
+## multiple comparison testing
+
+```{r}
+# unadjusted paired t test ========
+brokerstudy=read.csv("~/OneDrive - University of Calgary/MyCoursesThierry/DATA603/data/dataset603/brokerstudy.csv", header=TRUE)str(brokerstudy)
+
+CRD<-aov(price~broker, data=brokerstudy) #Perform ANOVA for CRDsummary(CRD)
+
+
+# Holme ===========
+pairwise.t.test(brokerstudy$price,brokerstudy$broker, p.adj = "none")
+
+# bonferonni ============= 
+pairwise.t.test(brokerstudy$price,brokerstudy$broker, p.adj = "bonferroni")
+#pvalue (brok 1 vs brok 2)=0.03863* 10 number of comparisons=0.38630.
+
+
+## Fishers least signficant difference -----
+#example for constructing the difference in two means for broker1&3
+ybar1<-mean(brokerstudy$price[brokerstudy$broker == "broker1"])
+ybar3<-mean(brokerstudy$price[brokerstudy$broker == "broker3"])
+tvalue<-qt(0.025,CRD$df.residual, lower.tail = F)
+MSE<-sum((CRD$residuals)^2/CRD$df.residual)
+r<-length(brokerstudy$price[brokerstudy$broker == "broker1"])
+LSD<-tvalue*sqrt((2*MSE)/r)LowerCI<-(ybar1-ybar3)-LSD#construct a 95% Lower CI
+UpperCI<-(ybar1-ybar3)+LSD#construct a 95% Lower CICI<-cbind(LowerCI,UpperCI)print(CI)
+
+# Or using 
+library(agricolae)
+LS=LSD.test(CRD,trt="broker")
+
+# Tukey's HSD ==================
+TukeyHSD(CRD, conf.level = 0.95)
+par(mar = c(4, 7, 2, 1))
+plot(TukeyHSD(CRD, conf.level = 0.95),las=1, col = "red")
+
+
+
+# Neuwman Keuls =======
+library(agricolae)# SNK.test() is avalible in the agricolae package for Newman-Keuls (SNK)
+brokerstudy=read.csv("brokerstudy.csv", header=TRUE)
+CRD<-aov(price~broker, data=brokerstudy) #Perform ANOVA for CRD
+print(SNK.test(CRD,"broker",group=TRUE))#SNK.test() function can be used for Newman-Keuls test in R,
+
+# Scheffe ==============
+CRD<-aov(price~broker, data=brokerstudy) #Perform ANOVA for CRD
+scheffe.test(CRD,"broker", group=TRUE,console=TRUE)
+
+```
+#### in class 
+```{r}
+dat = read.csv("MVPC.csv")
+CRD<-aov(Score~Treatment, data=MVPC)
+
+# Unadjusted ===============
+pairwise.t.test(dat$Score,dat$Treatment, p.adj = "none")
+
+
+# Holme ===========
+pairwise.t.test(dat$Score,dat$Treatment, p.adj = "holm")
+
+
+# bonferonni ============= 
+pairwise.t.test(dat$Score,dat$Treatment, p.adj = "bonferroni")
+
+
+## Fishers least signficant difference -----
+#example for constructing the difference in two means for broker1&3
+ybar1<-mean(dat$Score[dat$Treatment == levels(dat$Treatment)[1]])
+ybar3<-mean(dat$Score[dat$Treatment == levels(dat$Treatment)[2]])
+tvalue<-qt(0.025,CRD$df.residual, lower.tail = F)
+MSE<-sum((CRD$residuals)^2/CRD$df.residual)
+r<-length(dat$Score[dat$Treatment == levels(dat$Treatment)[1]])
+LSD<-tvalue*sqrt((2*MSE)/r)
+LowerCI<-(ybar1-ybar3)-LSD #construct a 95% Lower CI
+UpperCI<-(ybar1-ybar3)+LSD #construct a 95% Lower CICI<-cbind(LowerCI,UpperCI)print(CI)
+
+# Or using 
+library(agricolae)
+(LS=LSD.test(CRD,trt="Treatment"))
+
+# Tukey's HSD ==================
+TukeyHSD(CRD, conf.level = 0.95)
+par(mar = c(4, 12, 2, 1))
+plot(TukeyHSD(CRD, conf.level = 0.95),las=1, col = "red")
+
+
+
+# Neuwman Keuls =======
+library(agricolae)# SNK.test() is avalible in the agricolae package for Newman-Keuls (SNK)
+CRD<-aov(Score~Treatment, data=dat) #Perform ANOVA for CRD
+print(SNK.test(CRD,"Treatment",group=TRUE))#SNK.test() function can be used for Newman-Keuls test in R,
+
+# Scheffe ==============
+CRD<-aov(Score~Treatment, data=dat) #Perform ANOVA for CRD
+scheffe.test(CRD,"Treatment", group=TRUE,console=TRUE)
+
+require(ggplot2)
+ggplot(data = dat, aes(x = Treatment, y = Score)) + 
+  geom_boxplot()
+```
+
+## Model Adequacy (Normality Assumption, Constant Variance Assumption, Independent error term Assumption)
+
+```{r}
+library(lmtest)
+par(mfrow=c(2,2))
+plot(CRD)
+
+# Homogeneity of Variances, Homoscedasticity
+bartlett.test(price~broker, data=brokerstudy)
+
+# Normality assumption ======
+shapiro.test(residuals(CRD))
+
+# Independent Error Term Assumption
+bptest(CRD)
+
+```
+
+### Kruskal Test
+
+```{r}
+# use when normality assumption is not met
+kruskal.test(price~broker, data=brokerstudy)
+
+# comparisons for non-normally dsitributed residulas data
+library(FSA)
+DT = dunnTest(price~broker,data=brokerstudy,method="none")
+
+```
+
+
+#### in class
+```{r}
+dat = read.csv("lifetime.csv")
+
+CRD<-aov(hrs~device, data=dat) #Perform ANOVA for CRD
+summary(CRD)
+
+par(mfrow=c(2,2))
+plot(CRD)
+
+# Homogeneity of Variances, Homoscedasticity
+bartlett.test(hrs~device, data=dat)
+
+# Normality assumption ======
+shapiro.test(residuals(CRD))
+
+# Independent Error Term Assumption
+bptest(CRD)
+
+kruskal.test(hrs~device, data=dat)
+
+library(FSA)
+DT = dunnTest(hrs~device, data=dat,method="none")
+DT
+```
+
