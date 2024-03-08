@@ -1,7 +1,0 @@
-"0","LinReg.Indep.Multico(model = LinReg1)"
-"2","Loading required package: carData
-"
-"1","[1]"
-"1"," ""If any of the Variance inflation factor (VIF) >5, we re-test the model without that variable to see if the beta's change by more than 10%"""
-"1","
-"

@@ -1,2 +1,5 @@
 "0",""
 "0","LinReg.Indep.InflPts(model = LinReg1, dat = dat, y = ""listprice"" )"
+"2","Error in xy.coords(x, y, xlabel, ylabel, log) : 
+  'x' and 'y' lengths differ
+"
