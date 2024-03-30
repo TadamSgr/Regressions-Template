@@ -126,7 +126,7 @@ LinReg.Indep.Multico = function(model = LingReg1) {
 
 
 
-LinReg.Indep.InflPts = function(model = LinReg1, dat = dat, y, outlier.crit = 2, remove.outliers = FALSE, .formula2test = formula2test){
+LinReg.Indep.InflPts = function(model = LinReg1, dat = dat, y.var= "y", outlier.crit = 2, remove.outliers = FALSE, .formula2test = formula2test){
   par(mfrow=c(1,2))
   plot(model,which=5)
   plot(model,pch=18,col="red",which=c(4))
@@ -149,10 +149,10 @@ LinReg.Indep.InflPts = function(model = LinReg1, dat = dat, y, outlier.crit = 2,
   ht.highest = max(c(max(lev)+.1*mean(lev), 3.2 *p/n))
   
   par(mfrow=c(1,1))
-  plot(1:length(dat[[y]]),
-       lev, 
+  plot(1:length(dat[[y.var]]),
+       unname(lev), 
        main = "Leverage1", 
-       xlim=c(1, length(dat[[y]])),
+       xlim=c(1, length(dat[[y.var]])),
        ylim=c(ht.lowest, ht.highest),
        pch=19,
        xlab="observation",
@@ -161,7 +161,7 @@ LinReg.Indep.InflPts = function(model = LinReg1, dat = dat, y, outlier.crit = 2,
   abline(h = 3 *p/n, lty = 1)
   
   outlier <- lev[lev>(outlier.crit*p/n)]
-  print(outlier)
+  print(paste0("Outliers: ", outlier))
   
   if(remove.outliers){ 
     print(summary(model))
