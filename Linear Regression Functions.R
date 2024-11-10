@@ -126,7 +126,13 @@ LinReg.Indep.Multico = function(model = LingReg1) {
 
 
 
-LinReg.Indep.InflPts = function(model = LinReg1, dat = dat, y.var= "y", outlier.crit = 2, remove.outliers = FALSE, .formula2test = formula2test){
+LinReg.Indep.InflPts = function(model = LinReg1, 
+                                dat = dat, 
+                                y.var= "y", 
+                                outlier.crit = 2, 
+                                remove.outliers = FALSE, 
+                                .formula2test = formula2test
+                                ){
   par(mfrow=c(1,2))
   plot(model,which=5)
   plot(model,pch=18,col="red",which=c(4))

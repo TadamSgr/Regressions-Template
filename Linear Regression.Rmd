@@ -108,11 +108,24 @@ dat = data.frame("y" = round( runif(nvalues, -0, 20000), 2 ), #c(1, 2, 3, 4, 5, 
                  'x3'	 = round( runif(nvalues, -0.005, 1.0049), 2 ), 
                  'x4'	 = sample(1:1000, size = nvalues, replace=T), 
                  'x5' = seq(1:nvalues), 
-                 'x6' = c(1, 2, rep(NA, nvalues-2)), 
+                 'x6' = c(1, 2, rep(c(3, 4, 5, 6), nvalues/4-2), 4, 5, 6, 7, 8, 9), 
                  'x7' = rep_len(c("R", "O", "Y", "G", "B", "I", "V"), length.out = nvalues)
+) %>% 
+  rbind(
+    data.frame("y" = round( runif(nvalues/50, 160000, 180000), 2 ), #c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                 'x1' = round( runif(nvalues/50, -300, 800), 2 ), #c(69, 118.5, 116.5, 125, 129.9, 135, 139.9, 147.9, 160, 169.9, 134.9, 155, 169.9, 194.5, 209.9), 
+                 'x2' = sample(hundredths, size=nvalues/50, replace=TRUE), 
+                 'x3'	 = round( runif(nvalues/50, -0.005, 1.0049), 2 ), 
+                 'x4'	 = sample(100:1000, size = nvalues/50, replace=T), 
+                 'x5' = seq(1:(nvalues/50)), 
+                 'x6' = c(1, 2, rep(c(4,11, 5, 12), nvalues/50/4-2), 20, 20, 20, 18, 20, 1), 
+                 'x7' = rep_len(c("R", "O", "Y", "G", "B", "I", "V"), length.out = nvalues/50)
+  )
 )
 
 
+
+dat = as.data.frame(lapply(dat, function(cc) cc[ sample(c(TRUE, NA), prob = c(0.95, 0.05), size = length(cc), replace = TRUE) ]))
 ```
 
 
@@ -241,7 +254,7 @@ LinReg.Indep.Multico(model = LinReg1)
 
 ```{r}
 
-LinReg.Indep.InflPts(model = LinReg1, dat = dat, y.var = "listprice" )
+LinReg.Indep.InflPts(model = LinReg1, dat = dat, y.var = "y" )
 ```
 
 If the results of the two models are similar, we can keep the data points, otherwise, we will need to run a new model with those data deleted. 

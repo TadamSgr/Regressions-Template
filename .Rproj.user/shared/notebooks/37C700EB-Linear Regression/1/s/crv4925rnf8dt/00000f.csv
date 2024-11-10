@@ -1,5 +1,0 @@
-"0","shap = LinReg.NormErrors.Shapiro()"
-"1","[1]"
-"1"," ""Shapiro-Wilk normality test: W=0.98, p=0.931, therefore, we accept the Null Hypothesis, and the sample is normally distributed"""
-"1","
-"
